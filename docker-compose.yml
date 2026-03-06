@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ekmayorista-postgres
+    environment:
+      POSTGRES_USER: ekmayorista
+      POSTGRES_PASSWORD: ekmayorista2026
+      POSTGRES_DB: ekmayorista
+    networks:
+      - ek-net
+    volumes:
+      - ./schema-ekmayorista.sql:/docker-entrypoint-initdb.d/init.sql
+
+  dolibarr:
+    image: dolibarr/dolibarr:latest
+    container_name: ekmayorista-dolibarr
+    ports:
+      - "8080:80"
+    environment:
+      - DOLI_DB_TYPE=pgsql
+      - DOLI_DB_HOST=postgres
+      - DOLI_DB_PORT=5432
+      - DOLI_DB_USER=ekmayorista
+      - DOLI_DB_PASSWORD=ekmayorista2026
+      - DOLI_DB_NAME=ekmayorista
+      - DOLI_ADMIN_LOGIN=admin
+      - DOLI_ADMIN_PASSWORD=Admin2026!
+      - DOLI_URL_ROOT=http://localhost:8080
+    depends_on:
+      - postgres
+    networks:
+      - ek-net
+
+  backend:
+    image: node:18-alpine
+    container_name: ekmayorista-backend
+    working_dir: /app
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://ekmayorista:ekmayorista2026@postgres:5432/ekmayorista
+      - JWT_SECRET=tu-clave-secreta-ekmayorista-2026
+      - NODE_ENV=development
+    command: sh -c "npm install && npm run dev"
+    networks:
+      - ek-net
+
+networks:
+  ek-net:
+    driver: bridge
